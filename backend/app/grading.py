@@ -19,8 +19,11 @@ RESULT_FORGOT = "forgot"
 
 PASS_RESULTS = {RESULT_CORRECT, RESULT_NEAR}
 
-# 西语重音需要保留的语义区分本可细分，但按文档宽松处理：统一去掉重音。
-_PUNCT_RE = re.compile(r"[¿?¡!.,;:]")
+# 判定分两层：
+#   correct  = 忽略「大小写 + 标点 + 空格」后一致（重音仍需对）——纯排版差异不算错
+#   near     = 再忽略「重音/ñ」后才一致——缺重音是真实拼写点，绿色通过但轻提醒
+# 手机打字几乎不会打大写开头/句尾句号/开头 ¿，这些一律算对，避免"一直被降级"的挫败。
+_PUNCT_RE = re.compile(r"[¿?¡!.,;:…]")
 _SPACE_RE = re.compile(r"\s+")
 
 
@@ -29,16 +32,15 @@ def _strip_accents(s: str) -> str:
     return "".join(c for c in nfkd if not unicodedata.combining(c))
 
 
-def _strict(s: str) -> str:
-    """严格规范化：只去首尾空白与内部多余空格，保留大小写/重音/标点。"""
-    return _SPACE_RE.sub(" ", s.strip())
+def _case_punct(s: str) -> str:
+    """忽略大小写 + 标点 + 多余空格，但保留重音。"""
+    s = _PUNCT_RE.sub("", s.lower())
+    return _SPACE_RE.sub(" ", s).strip()
 
 
 def _loose(s: str) -> str:
-    """宽松规范化：小写 + 去重音 + 去标点 + 折叠空格。"""
-    s = _strip_accents(s.lower())
-    s = _PUNCT_RE.sub("", s)
-    return _SPACE_RE.sub(" ", s).strip()
+    """在 _case_punct 基础上再去掉重音/ñ。"""
+    return _strip_accents(_case_punct(s))
 
 
 def grade(user_answer: str, es: str, accepted_answers) -> str | None:
@@ -54,12 +56,10 @@ def grade(user_answer: str, es: str, accepted_answers) -> str | None:
             accepted_answers = []
     candidates = [es] + [a for a in (accepted_answers or []) if a]
 
-    strict_set = {_strict(c) for c in candidates}
-    if _strict(user) in strict_set:
+    if _case_punct(user) in {_case_punct(c) for c in candidates}:
         return RESULT_CORRECT
 
-    loose_set = {_loose(c) for c in candidates}
-    if _loose(user) in loose_set:
+    if _loose(user) in {_loose(c) for c in candidates}:
         return RESULT_NEAR
 
     return RESULT_WRONG

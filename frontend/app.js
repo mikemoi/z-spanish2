@@ -254,7 +254,9 @@ function showFeedback(fb) {
     $('okLabel').textContent = fb.result === 'correct' ? '正确' : '接近正确';
     $('okAnswer').textContent = fb.es;
     fillExample('okExampleEs', 'okExampleZh', fb);
-    setNote('okNote', fb.note);
+    // 接近正确=只差重音/ñ，明确点出来，避免"明明对了却像被挑刺"
+    const nearHint = fb.result === 'near_correct' ? '基本正确，只差重音符号。' : '';
+    setNote('okNote', [nearHint, fb.note].filter(Boolean).join(' '));
     $('trainFeedbackOk').style.display = 'block';
   } else {
     $('warnLabel').textContent = fb.result === 'forgot' ? '没想起来' : '需要加强';
