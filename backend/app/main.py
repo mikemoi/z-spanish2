@@ -289,6 +289,20 @@ def again():
         conn.close()
 
 
+@app.post("/api/more", dependencies=[Depends(require_auth)])
+def more():
+    """继续练：无上限——先清到期复习/加强，再不限量喂新词。碎片时间随时接着练。"""
+    conn = get_conn()
+    try:
+        d = date.today()
+        ids = review.more_set(conn, d)
+        entries = _fetch_entries(conn, ids)
+        items = [_entry_public(entries[i]) for i in ids if i in entries]
+        return {"items": items, "total": len(items)}
+    finally:
+        conn.close()
+
+
 # ---------------------------------------------------------------------------
 # 基础库
 # ---------------------------------------------------------------------------

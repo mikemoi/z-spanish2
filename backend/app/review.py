@@ -181,6 +181,45 @@ def generate_daily_set(conn, today: date) -> dict:
     }
 
 
+def more_set(conn, today: date, batch: int = None) -> list:
+    """"继续练"：不设上限地往下喂——先清到期复习/需要加强，再不限量放新词。
+
+    每次返回一批(默认 DAILY_TOTAL 个)，排除今天已答过的，所以反复调用会像
+    无限滚动一样一直往后走，直到到期的都清了、新词也学完为止。
+    作答照常写回 SRS。
+    """
+    batch = batch or config.DAILY_TOTAL
+    today_iso = _iso(today)
+    answered = {r["entry_id"] for r in conn.execute(
+        "SELECT DISTINCT entry_id FROM attempts WHERE day = ?", (today_iso,)
+    ).fetchall()}
+
+    # 1) 到期复习 + 需要加强（今天还没答的）
+    due = _fetch_ids(conn, """
+        SELECT entry_id FROM review_state rs
+        JOIN entries e ON e.id = rs.entry_id
+        WHERE e.is_active = 1 AND (rs.in_reinforce = 1 OR rs.due_date <= ?)
+        ORDER BY rs.in_reinforce DESC, rs.due_date ASC
+    """, (today_iso,))
+    picks = [i for i in due if i not in answered]
+
+    # 2) 不限量补新词（无 review_state 的），按 id 顺序
+    if len(picks) < batch:
+        new_ids = _fetch_ids(conn, """
+            SELECT e.id AS entry_id FROM entries e
+            LEFT JOIN review_state rs ON rs.entry_id = e.id
+            WHERE e.is_active = 1 AND rs.entry_id IS NULL
+            ORDER BY e.id ASC
+        """)
+        for nid in new_ids:
+            if nid not in answered and nid not in picks:
+                picks.append(nid)
+            if len(picks) >= batch:
+                break
+
+    return picks[:batch]
+
+
 def extra_set(conn, today: date) -> list:
     """"再来一组"：只从到期复习 + 需要加强抽取，用来再练当天没稳的词块。
 

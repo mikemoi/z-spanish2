@@ -114,19 +114,26 @@ async function loadHome() {
     $('miniReinforce').textContent = d.reinforce_pool;
     const cta = $('heroCta');
     if (d.total === 0) {
-      cta.textContent = '今天没有到期内容';
-      cta.disabled = true;
-    } else if (d.done >= d.total) {
-      cta.textContent = '今天已完成 · 再看一遍';
+      cta.textContent = '继续学（新词 + 复习）';
       cta.disabled = false;
+      heroCtaMode = 'more';
+    } else if (d.done >= d.total) {
+      cta.textContent = '今日推荐已完成 · 继续学';
+      cta.disabled = false;
+      heroCtaMode = 'more';
     } else {
       cta.textContent = d.done > 0 ? `继续背诵（${d.done}/${d.total}）` : '开始背诵';
       cta.disabled = false;
+      heroCtaMode = 'daily';
     }
   } catch (e) { /* 401 已处理 */ }
 }
 
-$('heroCta').addEventListener('click', () => switchTab('page-train'));
+let heroCtaMode = 'daily';
+$('heroCta').addEventListener('click', () => {
+  if (heroCtaMode === 'more') startMore();
+  else switchTab('page-train');
+});
 
 /* ---------- 训练 ---------- */
 let queue = [];         // 待答 item 列表
@@ -205,8 +212,8 @@ function showQuestion() {
   if (!curEntry) { showDone(); return; }
   if (sessionType === 'practice') {
     $('trainCounter').textContent = `定向练习 · ${practiceCtx.label} · ${curIndex + 1}/${queue.length}`;
-  } else if (sessionType === 'again') {
-    $('trainCounter').textContent = `加练 · 第 ${curIndex + 1} / ${queue.length} 题`;
+  } else if (sessionType === 'more' || sessionType === 'again') {
+    $('trainCounter').textContent = `继续练 · 第 ${curIndex + 1} 题`;
   } else {
     $('trainCounter').textContent = `背诵训练 · 第 ${Math.min(doneToday + 1, totalToday)} / ${totalToday} 题`;
   }
@@ -295,9 +302,9 @@ function showDone() {
   hideAllTrainStates();
   const daily = sessionType === 'daily';
   $('trainCounter').textContent = daily ? '背诵训练'
-    : (sessionType === 'practice' ? '定向练习' : '加练');
+    : (sessionType === 'practice' ? '定向练习' : '继续练');
   buildProgress(daily ? totalToday : queue.length, daily ? totalToday : queue.length);
-  $('btnAgain').textContent = sessionType === 'practice' ? '再练一组' : '再来一组';
+  $('btnAgain').textContent = sessionType === 'practice' ? '再练一组' : '继续练（新词+复习）';
   $('trainDone').style.display = 'block';
   endTimer(true); // 完成即静默记录本次时长
 }
@@ -309,22 +316,32 @@ $('okNext').addEventListener('click', advance);
 $('warnNext').addEventListener('click', advance);
 $('btnGoStats').addEventListener('click', () => switchTab('page-stats'));
 
-$('btnAgain').addEventListener('click', async () => {
+$('btnAgain').addEventListener('click', () => {
   if (sessionType === 'practice' && practiceCtx) {
     startPractice(practiceCtx.mode, practiceCtx.value, practiceCtx.label);
-    return;
+  } else {
+    startMore();
   }
+});
+
+// 继续练：无上限。先清到期复习/加强，再不限量喂新词。
+async function startMore() {
   try {
-    const d = await api('/api/again', { method: 'POST' });
-    if (!d.items.length) { toast('没有可加练的到期/加强内容'); return; }
-    sessionType = 'again';
+    const d = await api('/api/more', { method: 'POST' });
+    if (!d.items.length) {
+      toast('今天到期的和新词都练完了，剩下的交给间隔复习 🎉');
+      return;
+    }
+    sessionType = 'more';
+    practiceCtx = null;
     queue = d.items;
     curIndex = 0;
+    switchToTrainPage();
     startTimerIfNeeded();
     buildProgress(queue.length, 0);
     showQuestion();
   } catch (e) { toast(e.message); }
-});
+}
 
 /* ---------- 定向练习（双轴：场景 / 语法点） ---------- */
 let practiceLoaded = false;
