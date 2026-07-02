@@ -3,9 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0B1F3A">
+<meta name="theme-color" content="#F5F6F8">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<!-- default = 深色状态栏图标，配浅色 UI 才看得清（black-translucent 会强制白色图标，在浅底上看不见） -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="z-spanish">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -155,6 +157,17 @@
         </div>
         <div class="cat-scroll" id="catScroll"></div>
         <div id="libList"></div>
+
+        <div class="practice-entry" id="practiceToggle">
+          <span>◎ 定向练习（选做）</span>
+        </div>
+        <div class="practice-panel" id="practicePanel" style="display:none;">
+          <div class="practice-hint">针对性练某个场景或语法点。练了照常记入间隔复习，但不占今天的 20 个。</div>
+          <div class="practice-group-label">按场景</div>
+          <div class="practice-chips" id="practiceScenes"></div>
+          <div class="practice-group-label">按语法点</div>
+          <div class="practice-chips" id="practiceGrammar"></div>
+        </div>
 
         <div class="import-entry" id="importToggle">
           <span>+ 批量导入（需审核）</span>

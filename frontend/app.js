@@ -134,7 +134,8 @@ let curIndex = 0;
 let totalToday = 0;
 let doneToday = 0;
 let curEntry = null;
-let inAgainMode = false;
+let sessionType = 'daily';   // daily | again | practice
+let practiceCtx = null;      // { mode, value, label }
 
 // 静默计时
 let timerStart = null;
@@ -166,7 +167,8 @@ $('timerEnd').addEventListener('click', () => endTimer(false));
 async function startTraining() {
   try {
     const d = await api('/api/today');
-    inAgainMode = false;
+    sessionType = 'daily';
+    practiceCtx = null;
     // 只练还没答过的
     queue = d.items.filter(it => !it.done);
     totalToday = d.total;
@@ -201,9 +203,13 @@ function showQuestion() {
   hideAllTrainStates();
   curEntry = queue[curIndex];
   if (!curEntry) { showDone(); return; }
-  $('trainCounter').textContent = inAgainMode
-    ? `加练 · 第 ${curIndex + 1} / ${queue.length} 题`
-    : `背诵训练 · 第 ${Math.min(doneToday + 1, totalToday)} / ${totalToday} 题`;
+  if (sessionType === 'practice') {
+    $('trainCounter').textContent = `定向练习 · ${practiceCtx.label} · ${curIndex + 1}/${queue.length}`;
+  } else if (sessionType === 'again') {
+    $('trainCounter').textContent = `加练 · 第 ${curIndex + 1} / ${queue.length} 题`;
+  } else {
+    $('trainCounter').textContent = `背诵训练 · 第 ${Math.min(doneToday + 1, totalToday)} / ${totalToday} 题`;
+  }
   $('promptZh').textContent = curEntry.zh;
   const tags = $('promptTags');
   tags.innerHTML = '';
@@ -275,8 +281,9 @@ function setNote(id, note) {
 
 function advance() {
   markActivity();
-  if (!inAgainMode) doneToday += 1;
-  buildProgress(inAgainMode ? queue.length : totalToday, inAgainMode ? curIndex + 1 : doneToday);
+  const daily = sessionType === 'daily';
+  if (daily) doneToday += 1;
+  buildProgress(daily ? totalToday : queue.length, daily ? doneToday : curIndex + 1);
   curIndex += 1;
   if (curIndex >= queue.length) { showDone(); }
   else { showQuestion(); }
@@ -284,8 +291,11 @@ function advance() {
 
 function showDone() {
   hideAllTrainStates();
-  $('trainCounter').textContent = '背诵训练';
-  buildProgress(inAgainMode ? queue.length : totalToday, inAgainMode ? queue.length : totalToday);
+  const daily = sessionType === 'daily';
+  $('trainCounter').textContent = daily ? '背诵训练'
+    : (sessionType === 'practice' ? '定向练习' : '加练');
+  buildProgress(daily ? totalToday : queue.length, daily ? totalToday : queue.length);
+  $('btnAgain').textContent = sessionType === 'practice' ? '再练一组' : '再来一组';
   $('trainDone').style.display = 'block';
   endTimer(true); // 完成即静默记录本次时长
 }
@@ -298,10 +308,14 @@ $('warnNext').addEventListener('click', advance);
 $('btnGoStats').addEventListener('click', () => switchTab('page-stats'));
 
 $('btnAgain').addEventListener('click', async () => {
+  if (sessionType === 'practice' && practiceCtx) {
+    startPractice(practiceCtx.mode, practiceCtx.value, practiceCtx.label);
+    return;
+  }
   try {
     const d = await api('/api/again', { method: 'POST' });
     if (!d.items.length) { toast('没有可加练的到期/加强内容'); return; }
-    inAgainMode = true;
+    sessionType = 'again';
     queue = d.items;
     curIndex = 0;
     startTimerIfNeeded();
@@ -309,6 +323,65 @@ $('btnAgain').addEventListener('click', async () => {
     showQuestion();
   } catch (e) { toast(e.message); }
 });
+
+/* ---------- 定向练习（双轴：场景 / 语法点） ---------- */
+let practiceLoaded = false;
+
+$('practiceToggle').addEventListener('click', () => {
+  const p = $('practicePanel');
+  const show = p.style.display === 'none';
+  p.style.display = show ? 'block' : 'none';
+  if (show && !practiceLoaded) loadPracticeOptions();
+});
+
+async function loadPracticeOptions() {
+  try {
+    const d = await api('/api/practice/options');
+    renderPracticeChips('practiceScenes', d.scenes.map(s =>
+      ({ label: s.value, count: s.count, mode: 'scene', value: s.value })));
+    renderPracticeChips('practiceGrammar', d.grammar.map(g =>
+      ({ label: g.label, count: g.count, mode: 'grammar', value: g.code })));
+    practiceLoaded = true;
+  } catch (e) { toast(e.message); }
+}
+
+function renderPracticeChips(containerId, list) {
+  const box = $(containerId);
+  box.innerHTML = '';
+  list.forEach(it => {
+    const chip = document.createElement('div');
+    chip.className = 'practice-chip';
+    chip.innerHTML = `${escapeHtml(it.label)}<b>${it.count}</b>`;
+    chip.addEventListener('click', () => startPractice(it.mode, it.value, it.label));
+    box.appendChild(chip);
+  });
+}
+
+async function startPractice(mode, value, label) {
+  try {
+    const d = await api('/api/practice/start', {
+      method: 'POST', body: JSON.stringify({ mode, value, limit: 20 }),
+    });
+    if (!d.items.length) { toast('这个分类暂时没有题'); return; }
+    sessionType = 'practice';
+    practiceCtx = { mode, value, label };
+    queue = d.items;
+    curIndex = 0;
+    switchToTrainPage();
+    startTimerIfNeeded();
+    buildProgress(queue.length, 0);
+    showQuestion();
+  } catch (e) { toast(e.message); }
+}
+
+// 切到训练页但不触发 startTraining（那会重置成 daily 队列）
+function switchToTrainPage() {
+  document.querySelectorAll('.app-shell .page').forEach(p => p.classList.remove('active'));
+  $('page-train').classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n =>
+    n.classList.toggle('active', n.dataset.page === 'page-train'));
+  window.scrollTo(0, 0);
+}
 
 /* ---------- 基础库 ---------- */
 let libCategory = '全部';

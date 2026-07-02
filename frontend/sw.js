@@ -1,6 +1,7 @@
-/* 极简 Service Worker：只缓存静态壳，保证 PWA 可安装 + 弱网可开。
-   数据接口(/api/*)一律走网络，绝不缓存（数据必须以服务器为准）。 */
-const CACHE = 'z-spanish-shell-v1';
+/* 极简 Service Worker：静态壳走「网络优先，离线回退缓存」。
+   这样每次在线打开都能拿到最新前端（改了 CSS/JS 立即生效），断网仍可开。
+   数据接口(/api/*)一律走网络，绝不拦截、绝不缓存（数据必须以服务器为准）。 */
+const CACHE = 'z-spanish-shell-v2';
 const SHELL = [
   './',
   'index.html',
@@ -28,8 +29,15 @@ self.addEventListener('fetch', (e) => {
   if (url.pathname.startsWith('/api/')) return; // 接口不拦截、不缓存
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    caches.match(e.request).then((cached) =>
-      cached || fetch(e.request).catch(() => caches.match('index.html'))
-    )
+    fetch(e.request)
+      .then((res) => {
+        // 成功取到，顺手更新缓存供离线回退
+        if (res && res.ok && url.origin === self.location.origin) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, copy));
+        }
+        return res;
+      })
+      .catch(() => caches.match(e.request).then((c) => c || caches.match('index.html')))
   );
 });
