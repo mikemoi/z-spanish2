@@ -1,0 +1,15 @@
+services:
+  z-spanish:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: z-spanish
+    restart: unless-stopped
+    environment:
+      # 部署时务必改成你自己的 PIN
+      - Z_SPANISH_PIN=${Z_SPANISH_PIN:-1234}
+      - Z_SPANISH_DATA=/data
+    volumes:
+      - /z/apps/z-spanish/data:/data          # SQLite 持久化
+    ports:
+      - "127.0.0.1:8000:8000"                 # 只绑本地，前面挂 Caddy/Nginx 做 HTTPS

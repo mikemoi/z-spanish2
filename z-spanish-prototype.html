@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>z-spanish · Core Basics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0B1F3A;
+    --navy-deep:#071527;
+    --gold:#B8924F;
+    --sage:#4F7A68;
+    --sage-bg:#EAF1EC;
+    --rust:#B15A3E;
+    --rust-bg:#F7EAE4;
+    --bg:#F5F6F8;
+    --card:#FFFFFF;
+    --ink:#16202E;
+    --ink-soft:#6B7480;
+    --ink-faint:#9AA2AC;
+    --line:#E7E9ED;
+    --masc-bg:#E7ECF5;
+    --masc-text:#33507D;
+    --fem-bg:#F6E9DE;
+    --fem-text:#8C5330;
+    --radius-card:18px;
+    --radius-pill:999px;
+    --radius-btn:12px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:#DADDE3;
+    font-family:'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+    min-height:100vh;
+  }
+  .frame{
+    width:100%;
+    max-width:480px;
+    min-height:100vh;
+    background:var(--bg);
+    position:relative;
+    display:flex;
+    flex-direction:column;
+  }
+  .es{ font-family:'Fraunces', serif; }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    padding:22px 22px 16px;
+    background:var(--bg);
+  }
+  .topbar .eyebrow{
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    font-weight:600;
+  }
+  .topbar h1{
+    margin:4px 0 0;
+    font-size:22px;
+    font-weight:700;
+    color:var(--navy);
+  }
+
+  /* ---------- Page container ---------- */
+  .page{
+    display:none;
+    flex:1;
+    flex-direction:column;
+    padding:0 20px 100px;
+    animation:fade .28s ease;
+  }
+  .page.active{display:flex;}
+  @keyframes fade{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  /* ---------- LOGIN PAGE ---------- */
+  #page-login{
+    justify-content:center;
+    align-items:center;
+    padding-bottom:0;
+    min-height:100vh;
+  }
+  .login-mark{
+    width:56px;height:56px;border-radius:16px;
+    background:var(--navy);
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:22px;
+  }
+  .login-mark span{
+    font-family:'Fraunces', serif;
+    color:var(--gold);
+    font-size:24px;
+    font-weight:600;
+  }
+  .login-title{ font-size:19px; font-weight:700; color:var(--navy); margin-bottom:6px; }
+  .login-sub{ font-size:13px; color:var(--ink-soft); margin-bottom:32px; }
+  .pin-dots{ display:flex; gap:14px; margin-bottom:32px; }
+  .pin-dot{
+    width:14px;height:14px;border-radius:50%;
+    border:1.5px solid var(--ink-faint);
+    transition:all .15s ease;
+  }
+  .pin-dot.filled{ background:var(--navy); border-color:var(--navy); }
+  .pin-pad{
+    display:grid;
+    grid-template-columns:repeat(3, 64px);
+    gap:14px;
+  }
+  .pin-key{
+    width:64px;height:64px;border-radius:50%;
+    border:none; background:var(--card);
+    font-size:20px; font-weight:600; color:var(--ink);
+    box-shadow:0 1px 3px rgba(11,31,58,.08);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .pin-key:active{ background:var(--line); }
+  .pin-key.ghost{ background:transparent; box-shadow:none; }
+
+  /* ---------- HOME PAGE ---------- */
+  .hero-card{
+    background:var(--navy);
+    border-radius:var(--radius-card);
+    padding:26px 24px 24px;
+    color:#fff;
+    position:relative;
+    overflow:hidden;
+    margin-bottom:16px;
+  }
+  .hero-card::after{
+    content:"";
+    position:absolute; right:-30px; top:-30px;
+    width:140px;height:140px;border-radius:50%;
+    background:rgba(184,146,79,.14);
+  }
+  .hero-eyebrow{ font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.6); font-weight:600; }
+  .hero-question{ font-size:19px; font-weight:600; margin:8px 0 20px; position:relative; }
+  .hero-stats{ display:flex; gap:22px; position:relative; }
+  .hero-stat b{ display:block; font-size:24px; font-weight:700; }
+  .hero-stat span{ font-size:11px; color:rgba(255,255,255,.65); }
+  .hero-cta{
+    margin-top:22px; width:100%;
+    background:var(--gold); color:var(--navy-deep);
+    border:none; border-radius:var(--radius-btn);
+    height:50px; font-size:15px; font-weight:700;
+    position:relative;
+  }
+  .tip-line{
+    font-size:12.5px; color:var(--ink-soft);
+    text-align:center; margin:14px 0 22px;
+  }
+  .section-label{
+    font-size:12px; font-weight:700; color:var(--ink-faint);
+    letter-spacing:.06em; text-transform:uppercase;
+    margin:4px 0 10px;
+  }
+  .mini-row{ display:flex; gap:12px; margin-bottom:24px; }
+  .mini-card{
+    flex:1; background:var(--card); border-radius:14px;
+    padding:14px 14px 12px; box-shadow:0 1px 3px rgba(11,31,58,.06);
+  }
+  .mini-card b{ display:block; font-size:20px; color:var(--navy); }
+  .mini-card span{ font-size:11.5px; color:var(--ink-soft); }
+  .mini-card.warn b{ color:var(--rust); }
+
+  /* ---------- TRAINING PAGE ---------- */
+  .train-progress{
+    display:flex; gap:4px; margin:18px 0 20px;
+  }
+  .train-progress i{ flex:1; height:3px; border-radius:2px; background:var(--line); }
+  .train-progress i.done{ background:var(--gold); }
+  .train-progress i.current{ background:var(--navy); }
+
+  .timer-end{ font-size:11.5px; color:var(--ink-soft); font-weight:600; padding:3px 10px; border-radius:var(--radius-pill); border:1px solid var(--line); margin-top:2px; }
+
+  .prompt-card{
+    background:var(--card); border-radius:var(--radius-card);
+    padding:30px 24px 26px; text-align:center;
+    box-shadow:0 1px 3px rgba(11,31,58,.06);
+    margin-bottom:18px;
+  }
+  .prompt-zh{ font-size:26px; font-weight:700; color:var(--ink); margin-bottom:14px; }
+  .prompt-tags{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .tag{
+    font-size:11.5px; padding:4px 10px; border-radius:var(--radius-pill);
+    background:var(--bg); color:var(--ink-soft); border:1px solid var(--line);
+  }
+  .hint-line{ text-align:center; font-size:12.5px; color:var(--ink-faint); margin-bottom:18px; }
+
+  .answer-input{
+    width:100%; height:54px; border-radius:var(--radius-btn);
+    border:1.5px solid var(--line); background:var(--card);
+    padding:0 18px; font-size:17px; font-family:'Fraunces', serif;
+    color:var(--navy); margin-bottom:14px;
+  }
+  .answer-input:focus{ outline:none; border-color:var(--navy); }
+
+  .btn-row{ display:flex; gap:10px; }
+  .btn{
+    border:none; border-radius:var(--radius-btn);
+    height:50px; font-size:15px; font-weight:700;
+    flex:1; font-family:inherit;
+  }
+  .btn-primary{ background:var(--navy); color:#fff; }
+  .btn-ghost{ background:transparent; color:var(--ink-soft); border:1.5px solid var(--line); }
+
+  /* feedback */
+  .feedback-card{
+    background:var(--card); border-radius:var(--radius-card);
+    padding:26px 24px; box-shadow:0 1px 3px rgba(11,31,58,.06);
+    margin-bottom:18px;
+  }
+  .fb-status{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:12.5px; font-weight:700; padding:5px 12px;
+    border-radius:var(--radius-pill); margin-bottom:18px;
+  }
+  .fb-status.ok{ background:var(--sage-bg); color:var(--sage); }
+  .fb-status.warn{ background:var(--rust-bg); color:var(--rust); }
+  .fb-status i{ width:6px;height:6px;border-radius:50%; background:currentColor; }
+
+  .fb-label{ font-size:11.5px; color:var(--ink-faint); font-weight:600; letter-spacing:.04em; text-transform:uppercase; margin-bottom:6px; }
+  .fb-answer{ font-size:24px; font-weight:600; color:var(--navy); margin-bottom:18px; }
+
+  .chunk-pill{
+    display:inline-flex; align-items:stretch;
+    border-radius:var(--radius-pill); overflow:hidden;
+    font-family:'Fraunces', serif; font-size:24px; font-weight:600;
+    background:#EEF0F3;
+  }
+  .chunk-pill .art{ padding:2px 10px 2px 14px; color:var(--navy); background:rgba(11,31,58,.08); }
+  .chunk-pill .noun{ padding:2px 14px 2px 6px; color:var(--navy); }
+
+  .fb-example{ font-size:16px; color:var(--ink); margin-bottom:2px; font-family:'Fraunces', serif; }
+  .fb-example-zh{ font-size:13px; color:var(--ink-soft); margin-bottom:16px; }
+  .fb-note{
+    font-size:13px; color:var(--ink-soft); line-height:1.6;
+    background:var(--bg); border-radius:10px; padding:12px 14px;
+    margin-bottom:4px;
+  }
+  .fb-your{ font-size:13px; color:var(--rust); margin-bottom:16px; }
+  .retype-label{ font-size:12.5px; color:var(--ink-soft); margin:16px 0 8px; }
+
+  /* ---------- LIBRARY PAGE ---------- */
+  .search-bar{
+    height:44px; border-radius:var(--radius-pill);
+    background:var(--card); border:1px solid var(--line);
+    display:flex; align-items:center; padding:0 16px;
+    font-size:13.5px; color:var(--ink-faint);
+    margin:18px 0 14px;
+  }
+  .cat-scroll{
+    display:flex; gap:8px; overflow-x:auto; padding-bottom:14px;
+    scrollbar-width:none;
+  }
+  .cat-scroll::-webkit-scrollbar{ display:none; }
+  .cat-chip{
+    flex-shrink:0; font-size:13px; padding:7px 14px;
+    border-radius:var(--radius-pill); background:var(--card);
+    border:1px solid var(--line); color:var(--ink-soft); font-weight:600;
+  }
+  .cat-chip.active{ background:var(--navy); color:#fff; border-color:var(--navy); }
+
+  .lib-item{
+    background:var(--card); border-radius:14px;
+    padding:16px 16px; margin-bottom:10px;
+    box-shadow:0 1px 3px rgba(11,31,58,.05);
+  }
+  .lib-top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+  .lib-zh{ font-size:13.5px; color:var(--ink-soft); }
+  .stage-tag{
+    font-size:10.5px; font-weight:700; padding:3px 9px;
+    border-radius:var(--radius-pill); white-space:nowrap;
+  }
+  .stage-new{ background:#EEF0F3; color:var(--ink-faint); }
+  .stage-building{ background:#FDF1E2; color:#A8752E; }
+  .stage-solid{ background:var(--sage-bg); color:var(--sage); }
+  .stage-longterm{ background:#E6E9F5; color:#40507D; }
+
+  .lib-es{ margin-bottom:8px; }
+  .lib-example{ font-size:12.5px; color:var(--ink-faint); font-family:'Fraunces', serif; }
+
+  .import-entry{
+    text-align:center; padding:16px 0 6px;
+    font-size:12.5px; color:var(--ink-faint);
+    font-weight:600; letter-spacing:.02em;
+  }
+  .import-panel{
+    background:var(--card); border-radius:14px;
+    padding:16px; margin-top:8px; margin-bottom:20px;
+    border:1px dashed var(--line);
+  }
+  .import-hint{ font-size:12px; color:var(--ink-faint); line-height:1.6; margin-bottom:10px; }
+  .import-textarea{
+    width:100%; height:90px; border-radius:10px;
+    border:1.5px solid var(--line); background:var(--bg);
+    padding:12px; font-size:12.5px; font-family:monospace;
+    color:var(--ink-soft); resize:none;
+  }
+  .import-preview{
+    margin-top:14px; padding-top:14px; border-top:1px solid var(--line);
+  }
+  .import-preview-title{ font-size:12px; font-weight:700; color:var(--sage); margin-bottom:8px; }
+  .import-preview-item{
+    font-size:12.5px; color:var(--ink-soft); padding:6px 0;
+  }
+
+  /* ---------- STATS PAGE ---------- */
+  .stat-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:10px;
+    margin:18px 0;
+  }
+  .stat-box{
+    background:var(--card); border-radius:14px;
+    padding:16px; box-shadow:0 1px 3px rgba(11,31,58,.05);
+  }
+  .stat-box b{ display:block; font-size:26px; color:var(--navy); font-weight:700; }
+  .stat-box span{ font-size:12px; color:var(--ink-soft); }
+  .stat-box.wide{ grid-column:1 / -1; display:flex; justify-content:space-between; align-items:center; }
+  .stat-box.wide .mono{ text-align:right; }
+
+  .period-scroll{ display:flex; gap:8px; margin:18px 0 4px; }
+  .period-chip{
+    font-size:13px; padding:7px 16px; border-radius:var(--radius-pill);
+    background:var(--card); border:1px solid var(--line); color:var(--ink-soft);
+    font-weight:600;
+  }
+  .period-chip.active{ background:var(--navy); color:#fff; border-color:var(--navy); }
+
+  .breakdown{
+    background:var(--card); border-radius:14px; padding:6px 16px;
+    margin-bottom:18px; box-shadow:0 1px 3px rgba(11,31,58,.05);
+  }
+  .bd-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:13px 0; border-bottom:1px solid var(--line); font-size:14px;
+  }
+  .bd-row:last-child{ border-bottom:none; }
+  .bd-row .dot{ width:8px;height:8px;border-radius:50%; display:inline-block; margin-right:8px; }
+  .bd-left{ display:flex; align-items:center; color:var(--ink); }
+  .bd-right{ font-weight:700; color:var(--navy); }
+
+  .copy-btn{
+    width:100%; height:52px; border-radius:var(--radius-btn);
+    background:var(--navy); color:#fff; border:none;
+    font-size:15px; font-weight:700; margin-bottom:8px;
+  }
+  .copy-hint{ text-align:center; font-size:11.5px; color:var(--ink-faint); margin-bottom:20px; }
+
+  /* ---------- BOTTOM NAV ---------- */
+  .bottom-nav{
+    position:absolute; left:0; right:0; bottom:0;
+    max-width:480px; margin:0 auto;
+    background:rgba(255,255,255,.92);
+    backdrop-filter:blur(14px);
+    border-top:1px solid var(--line);
+    display:flex; padding:10px 8px calc(10px + env(safe-area-inset-bottom));
+    display:none;
+  }
+  .bottom-nav.show{ display:flex; }
+  .nav-item{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
+    color:var(--ink-faint); font-size:11px; font-weight:600;
+  }
+  .nav-item svg{ width:22px; height:22px; }
+  .nav-item.active{ color:var(--navy); }
+  .nav-item.active svg{ stroke:var(--navy); }
+  .nav-item svg{ stroke:var(--ink-faint); }
+
+  .app-shell{ display:flex; flex-direction:column; flex:1; }
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <!-- ============ LOGIN ============ -->
+  <div class="page active" id="page-login">
+    <div class="login-mark"><span>Z</span></div>
+    <div class="login-title">z-spanish</div>
+    <div class="login-sub">输入 PIN 进入</div>
+    <div class="pin-dots" id="pinDots">
+      <div class="pin-dot"></div><div class="pin-dot"></div>
+      <div class="pin-dot"></div><div class="pin-dot"></div>
+    </div>
+    <div class="pin-pad">
+      <button class="pin-key" onclick="pressPin()">1</button>
+      <button class="pin-key" onclick="pressPin()">2</button>
+      <button class="pin-key" onclick="pressPin()">3</button>
+      <button class="pin-key" onclick="pressPin()">4</button>
+      <button class="pin-key" onclick="pressPin()">5</button>
+      <button class="pin-key" onclick="pressPin()">6</button>
+      <button class="pin-key" onclick="pressPin()">7</button>
+      <button class="pin-key" onclick="pressPin()">8</button>
+      <button class="pin-key" onclick="pressPin()">9</button>
+      <div></div>
+      <button class="pin-key" onclick="pressPin()">0</button>
+      <div></div>
+    </div>
+  </div>
+
+  <!-- ============ APP SHELL ============ -->
+  <div class="app-shell" id="appShell" style="display:none;">
+
+    <!-- HOME -->
+    <div class="page" id="page-home">
+      <div class="topbar">
+        <div class="eyebrow">今天是</div>
+        <h1>7 月 1 日 · 周三</h1>
+      </div>
+      <div style="padding:0 20px;">
+        <div class="hero-card">
+          <div class="hero-eyebrow">今天我要背什么</div>
+          <div class="hero-question">20 个生活西语表达，5 个新内容</div>
+          <div class="hero-stats">
+            <div class="hero-stat"><b>5</b><span>新内容</span></div>
+            <div class="hero-stat"><b>15</b><span>复习</span></div>
+            <div class="hero-stat"><b>3</b><span>需要加强</span></div>
+          </div>
+          <button class="hero-cta" onclick="goTrainStart()">开始背诵</button>
+        </div>
+        <div class="tip-line">先开口说，再输入西语。</div>
+
+        <div class="section-label">本月概览</div>
+        <div class="mini-row">
+          <div class="mini-card"><b>18</b><span>本月完成天数</span></div>
+          <div class="mini-card"><b>47</b><span>长期记忆词块</span></div>
+          <div class="mini-card warn"><b>3</b><span>需要加强</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRAINING -->
+    <div class="page" id="page-train">
+      <div class="topbar" style="padding-bottom:0; display:flex; justify-content:space-between; align-items:flex-start;">
+        <div class="eyebrow">背诵训练 · 第 6 / 20 题</div>
+        <span class="timer-end" onclick="endTimer()">结束</span>
+      </div>
+      <div style="padding:0 20px;">
+        <div class="train-progress" id="trainProgress"></div>
+
+        <!-- question state -->
+        <div id="trainQuestion">
+          <div class="prompt-card">
+            <div class="prompt-zh">它在那里</div>
+            <div class="prompt-tags">
+              <span class="tag">动词 · verbo</span>
+              <span class="tag">ser / estar / hay</span>
+            </div>
+          </div>
+          <div class="hint-line">先开口说，再输入西语。</div>
+          <input class="answer-input es" id="answerInput" placeholder="输入西语…">
+          <div class="btn-row">
+            <button class="btn btn-ghost" onclick="showFeedback('forgot')">我不会</button>
+            <button class="btn btn-primary" onclick="checkAnswer()">检查</button>
+          </div>
+        </div>
+
+        <!-- feedback: correct -->
+        <div id="trainFeedbackOk" style="display:none;">
+          <div class="feedback-card">
+            <div class="fb-status ok"><i></i>正确</div>
+            <div class="fb-label">标准答案</div>
+            <div class="fb-answer es">Está allí.</div>
+            <div class="fb-label">例句</div>
+            <div class="fb-example es">Está allí.</div>
+            <div class="fb-example-zh">它在那里。</div>
+            <div class="fb-note">está 来自动词 estar，表示位置；不要和 esta（这个，阴性）混淆。</div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;" onclick="nextQuestion()">下一个</button>
+        </div>
+
+        <!-- feedback: needs reinforcement -->
+        <div id="trainFeedbackWarn" style="display:none;">
+          <div class="feedback-card">
+            <div class="fb-status warn"><i></i>需要加强</div>
+            <div class="fb-label">标准答案</div>
+            <div class="fb-answer es">Está allí.</div>
+            <div class="fb-your">你的答案：Está aquí</div>
+            <div class="fb-label">例句</div>
+            <div class="fb-example es">Está allí.</div>
+            <div class="fb-example-zh">它在那里。</div>
+            <div class="fb-note">allí 是"那里"，aquí 是"这里"，注意区分。</div>
+            <div class="retype-label">请照着输入一遍：</div>
+            <input class="answer-input es" placeholder="Está allí.">
+          </div>
+          <button class="btn btn-primary" style="width:100%;" onclick="nextQuestion()">完成</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIBRARY -->
+    <div class="page" id="page-library">
+      <div class="topbar">
+        <div class="eyebrow">基础库</div>
+        <h1>Core 100</h1>
+      </div>
+      <div style="padding:0 20px;">
+        <div class="search-bar">搜索中文或西语…</div>
+        <div class="cat-scroll">
+          <div class="cat-chip active">全部</div>
+          <div class="cat-chip">方位</div>
+          <div class="cat-chip">ser/estar/hay</div>
+          <div class="cat-chip">冠词+名词</div>
+          <div class="cat-chip">介词短语</div>
+          <div class="cat-chip">生活固定句</div>
+        </div>
+
+        <div class="lib-item">
+          <div class="lib-top">
+            <div class="lib-zh">这里</div>
+            <span class="stage-tag stage-longterm">长期记忆</span>
+          </div>
+          <div class="lib-es"><span class="tag">副词 · 方位</span></div>
+          <div style="font-size:19px; font-weight:600; color:var(--navy); font-family:'Fraunces',serif; margin-bottom:6px;">aquí</div>
+          <div class="lib-example">Estoy aquí. 我在这里。</div>
+        </div>
+
+        <div class="lib-item">
+          <div class="lib-top">
+            <div class="lib-zh">水（冠词词块）</div>
+            <span class="stage-tag stage-solid">稳固</span>
+          </div>
+          <div class="lib-es">
+            <span class="chunk-pill" style="font-size:19px;">
+              <span class="art">el</span><span class="noun">agua</span>
+            </span>
+          </div>
+          <div class="lib-example" style="margin-top:8px;">Necesito agua. 我需要水。</div>
+        </div>
+
+        <div class="lib-item">
+          <div class="lib-top">
+            <div class="lib-zh">桌子（冠词词块）</div>
+            <span class="stage-tag stage-building">巩固中</span>
+          </div>
+          <div class="lib-es">
+            <span class="chunk-pill" style="font-size:19px;">
+              <span class="art">la</span><span class="noun">mesa</span>
+            </span>
+          </div>
+          <div class="lib-example" style="margin-top:8px;">La mesa está aquí. 桌子在这里。</div>
+        </div>
+
+        <div class="lib-item">
+          <div class="lib-top">
+            <div class="lib-zh">不用了，谢谢</div>
+            <span class="stage-tag stage-new">初识</span>
+          </div>
+          <div class="lib-es"><span class="tag">生活固定句</span></div>
+          <div style="font-size:17px; font-weight:600; color:var(--navy); font-family:'Fraunces',serif; margin-bottom:6px;">No hace falta, gracias.</div>
+          <div class="lib-example">常用于拒绝袋子、帮助或额外服务。</div>
+        </div>
+
+        <div class="import-entry" onclick="toggleImport()">
+          <span>+ 批量导入（需审核）</span>
+        </div>
+
+        <div class="import-panel" id="importPanel" style="display:none;">
+          <div class="import-hint">粘贴已在 ChatGPT/Claude 生成好的 JSON 词条，校验格式无误后再确认导入。</div>
+          <textarea class="import-textarea" placeholder='[{"id":"...", "category":"...", "zh":"...", "es":"...", ...}]'></textarea>
+          <div class="btn-row" style="margin-top:10px;">
+            <button class="btn btn-ghost" onclick="toggleImport()">取消</button>
+            <button class="btn btn-primary" onclick="validateImport()">校验格式</button>
+          </div>
+          <div class="import-preview" id="importPreview" style="display:none;">
+            <div class="import-preview-title">校验通过，预览 2 条：</div>
+            <div class="import-preview-item">房东要涨租 → El propietario quiere subir el alquiler.</div>
+            <div class="import-preview-item">押金退还 → devolución de la fianza</div>
+            <button class="btn btn-primary" style="width:100%; margin-top:12px;" onclick="confirmImport()">确认导入</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="page" id="page-stats">
+      <div class="topbar">
+        <div class="eyebrow">今日总结</div>
+        <h1>统计</h1>
+      </div>
+      <div style="padding:0 20px;">
+        <div class="period-scroll">
+          <div class="period-chip active" onclick="switchPeriod('day', this)">日</div>
+          <div class="period-chip" onclick="switchPeriod('week', this)">周</div>
+          <div class="period-chip" onclick="switchPeriod('month', this)">月</div>
+          <div class="period-chip" onclick="switchPeriod('year', this)">年</div>
+        </div>
+
+        <div class="stat-grid">
+          <div class="stat-box"><b>20</b><span>今日完成</span></div>
+          <div class="stat-box"><b id="statTimer">12 分钟</b><span id="statTimerLabel">今日练习时长</span></div>
+          <div class="stat-box"><b>18</b><span>本月完成天数</span></div>
+          <div class="stat-box wide">
+            <div><b style="font-size:20px;">47</b><span>当前长期记忆词块</span></div>
+            <div class="mono" style="font-size:12px; color:var(--ink-faint);">共 100 条</div>
+          </div>
+        </div>
+
+        <div class="section-label">今日结果</div>
+        <div class="breakdown">
+          <div class="bd-row">
+            <span class="bd-left"><span class="dot" style="background:var(--sage);"></span>正确</span>
+            <span class="bd-right">14</span>
+          </div>
+          <div class="bd-row">
+            <span class="bd-left"><span class="dot" style="background:var(--gold);"></span>接近正确</span>
+            <span class="bd-right">3</span>
+          </div>
+          <div class="bd-row">
+            <span class="bd-left"><span class="dot" style="background:var(--rust);"></span>需要加强</span>
+            <span class="bd-right">2</span>
+          </div>
+          <div class="bd-row">
+            <span class="bd-left"><span class="dot" style="background:var(--ink-faint);"></span>没想起来</span>
+            <span class="bd-right">1</span>
+          </div>
+        </div>
+
+        <button class="copy-btn" onclick="copyGpt()">复制给 GPT</button>
+        <div class="copy-hint">生成今天的记忆状态摘要，用于设计明天的小课文</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav" id="bottomNav">
+    <div class="nav-item active" data-page="page-home" onclick="switchTab('page-home', this)">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5"/></svg>
+      首页
+    </div>
+    <div class="nav-item" data-page="page-train" onclick="switchTab('page-train', this)">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+      训练
+    </div>
+    <div class="nav-item" data-page="page-library" onclick="switchTab('page-library', this)">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15Z"/></svg>
+      基础库
+    </div>
+    <div class="nav-item" data-page="page-stats" onclick="switchTab('page-stats', this)">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M8 17V10m5 7V6m5 11v-4"/></svg>
+      统计
+    </div>
+  </div>
+</div>
+
+<script>
+let pinCount = 0;
+function pressPin(){
+  pinCount++;
+  const dots = document.querySelectorAll('.pin-dot');
+  if(pinCount <= dots.length){ dots[pinCount-1].classList.add('filled'); }
+  if(pinCount === 4){
+    setTimeout(()=>{
+      document.getElementById('page-login').classList.remove('active');
+      document.getElementById('appShell').style.display = 'flex';
+      document.getElementById('page-home').classList.add('active');
+      document.getElementById('bottomNav').classList.add('show');
+    }, 200);
+  }
+}
+
+function switchTab(pageId, el){
+  document.querySelectorAll('.app-shell .page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  if(pageId === 'page-train'){ resetTrainState(); }
+}
+
+function goTrainStart(){
+  document.querySelectorAll('.app-shell .page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-train').classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelector('.nav-item[data-page="page-train"]').classList.add('active');
+  resetTrainState();
+  startTimerIfNeeded();
+}
+
+function resetTrainState(){
+  document.getElementById('trainQuestion').style.display = 'block';
+  document.getElementById('trainFeedbackOk').style.display = 'none';
+  document.getElementById('trainFeedbackWarn').style.display = 'none';
+  document.getElementById('answerInput').value = '';
+  buildProgress();
+}
+
+function buildProgress(){
+  const bar = document.getElementById('trainProgress');
+  bar.innerHTML = '';
+  for(let i=0;i<20;i++){
+    const s = document.createElement('i');
+    if(i < 5) s.classList.add('done');
+    else if(i === 5) s.classList.add('current');
+    bar.appendChild(s);
+  }
+}
+
+function checkAnswer(){
+  markActivity();
+  const val = document.getElementById('answerInput').value.trim().toLowerCase();
+  document.getElementById('trainQuestion').style.display = 'none';
+  if(val === 'está allí' || val === 'está allí.'){
+    document.getElementById('trainFeedbackOk').style.display = 'block';
+  } else {
+    document.getElementById('trainFeedbackWarn').style.display = 'block';
+  }
+}
+
+function showFeedback(type){
+  markActivity();
+  document.getElementById('trainQuestion').style.display = 'none';
+  document.getElementById('trainFeedbackWarn').style.display = 'block';
+}
+
+function nextQuestion(){
+  markActivity();
+  resetTrainState();
+}
+
+function copyGpt(){
+  const btn = event.target;
+  const original = btn.textContent;
+  btn.textContent = '已复制 ✓';
+  setTimeout(()=>{ btn.textContent = original; }, 1500);
+}
+
+function toggleImport(){
+  const panel = document.getElementById('importPanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  document.getElementById('importPreview').style.display = 'none';
+}
+
+function validateImport(){
+  document.getElementById('importPreview').style.display = 'block';
+}
+
+function confirmImport(){
+  const btn = event.target;
+  btn.textContent = '已导入，等待间隔复习排入 ✓';
+  btn.disabled = true;
+}
+
+/* ---------- 静默计时（后台记录，不展示实时进度） ---------- */
+let timerStart = null;
+let lastActivity = null;
+
+function startTimerIfNeeded(){
+  if(timerStart === null){
+    timerStart = Date.now();
+    lastActivity = timerStart;
+  }
+}
+
+function markActivity(){
+  lastActivity = Date.now();
+}
+
+function endTimer(){
+  if(timerStart === null) return;
+  // 兜底：以最后一次答题时间为准，而不是点击"结束"的时间
+  const effectiveEnd = lastActivity;
+  const minutes = Math.max(1, Math.round((effectiveEnd - timerStart) / 60000));
+  timeLog.day += minutes;
+  timeLog.week += minutes;
+  timeLog.month += minutes;
+  timeLog.year += minutes;
+  updateStatsTimerDisplay();
+  timerStart = null;
+  const btn = event.target;
+  const original = btn.textContent;
+  btn.textContent = '已记录';
+  setTimeout(()=>{ btn.textContent = original; }, 1200);
+}
+
+/* ---------- 时长统计：日/周/月/年（演示数据） ---------- */
+let timeLog = { day: 12, week: 68, month: 340, year: 2150 };
+let currentPeriod = 'day';
+const periodLabel = { day: '今日', week: '本周', month: '本月', year: '今年' };
+
+function switchPeriod(period, el){
+  currentPeriod = period;
+  document.querySelectorAll('.period-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  updateStatsTimerDisplay();
+}
+
+function updateStatsTimerDisplay(){
+  const el = document.getElementById('statTimer');
+  const lbl = document.getElementById('statTimerLabel');
+  if(!el) return;
+  el.textContent = timeLog[currentPeriod] + ' 分钟';
+  if(lbl) lbl.textContent = periodLabel[currentPeriod] + '练习时长';
+}
+</script>
+</body>
+</html>
