@@ -211,6 +211,70 @@ def answer(body: AnswerBody):
         conn.close()
 
 
+# 语法点轴：tags 里以 "G1:..".."G10:.." 形式编码
+GRAMMAR_LABELS = {
+    "G1": "定冠词 el/la", "G2": "不定冠词 un/una", "G3": "ser / estar",
+    "G4": "hay / está", "G5": "人称变位", "G6": "性数一致",
+    "G7": "介词搭配", "G8": "反身动词", "G9": "与格 gustar/doler",
+    "G10": "礼貌软化式",
+}
+
+
+@app.get("/api/practice/options", dependencies=[Depends(require_auth)])
+def practice_options():
+    """定向练习可选项：按场景(category) + 按语法点(G标签)，各带题量。"""
+    conn = get_conn()
+    try:
+        scenes = [
+            {"value": r["category"], "count": r["c"]}
+            for r in conn.execute(
+                """SELECT category, COUNT(*) AS c FROM entries
+                   WHERE is_active = 1 GROUP BY category ORDER BY category"""
+            ).fetchall()
+        ]
+        grammar = []
+        for code, label in GRAMMAR_LABELS.items():
+            c = conn.execute(
+                "SELECT COUNT(*) AS c FROM entries WHERE is_active = 1 AND tags LIKE ?",
+                (f'%{code}:%',),
+            ).fetchone()["c"]
+            if c > 0:
+                grammar.append({"code": code, "label": label, "count": c})
+        return {"scenes": scenes, "grammar": grammar}
+    finally:
+        conn.close()
+
+
+class PracticeBody(BaseModel):
+    mode: str       # scene | grammar
+    value: str      # 场景名 或 语法点代码(G1..)
+    limit: int = 20
+
+
+@app.post("/api/practice/start", dependencies=[Depends(require_auth)])
+def practice_start(body: PracticeBody):
+    """定向练习：按场景/语法点抽题。随机取，作答照常写回 SRS，但不进当日排期。"""
+    conn = get_conn()
+    try:
+        limit = max(1, min(body.limit, 40))
+        if body.mode == "grammar":
+            rows = conn.execute(
+                """SELECT * FROM entries WHERE is_active = 1 AND tags LIKE ?
+                   ORDER BY RANDOM() LIMIT ?""",
+                (f'%{body.value}:%', limit),
+            ).fetchall()
+        else:  # scene
+            rows = conn.execute(
+                """SELECT * FROM entries WHERE is_active = 1 AND category = ?
+                   ORDER BY RANDOM() LIMIT ?""",
+                (body.value, limit),
+            ).fetchall()
+        items = [_entry_public(r) for r in rows]
+        return {"items": items, "total": len(items)}
+    finally:
+        conn.close()
+
+
 @app.post("/api/again", dependencies=[Depends(require_auth)])
 def again():
     """再来一组：只从到期复习 + 需要加强抽取，不影响明天排期。"""

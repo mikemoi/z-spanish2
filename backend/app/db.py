@@ -31,14 +31,30 @@ def _seed_if_empty(conn: sqlite3.Connection) -> None:
     count = conn.execute("SELECT COUNT(*) AS c FROM entries").fetchone()["c"]
     if count > 0:
         return
-    seed_path = config.SEED_PATH if config.SEED_PATH.exists() else config.REPO_SEED_PATH
-    if not seed_path.exists():
+    seed_dir = config.DATA_SEED_DIR if config.DATA_SEED_DIR.exists() else config.REPO_SEED_DIR
+    if not seed_dir.exists():
         return
-    entries = json.loads(seed_path.read_text(encoding="utf-8"))
+    # 读目录下所有 *.json，按文件名排序后合并，跨文件按 id 去重
+    entries = []
+    seen = set()
+    files = sorted(seed_dir.glob("*.json"))
+    for f in files:
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as ex:
+            print(f"[z-spanish] 跳过无法解析的种子文件 {f.name}: {ex}")
+            continue
+        for e in data:
+            eid = e.get("id")
+            if eid and eid not in seen:
+                seen.add(eid)
+                entries.append(e)
+    if not entries:
+        return
     from .importer import insert_entries  # 延迟导入避免环
     inserted = insert_entries(conn, entries)
     conn.commit()
-    print(f"[z-spanish] 种子导入完成：{inserted} 条来自 {seed_path.name}")
+    print(f"[z-spanish] 种子导入完成：{inserted} 条，来自 {len(files)} 个文件")
 
 
 def utcnow_iso() -> str:

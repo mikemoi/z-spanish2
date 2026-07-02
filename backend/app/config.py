@@ -12,9 +12,10 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 DB_PATH = DATA_DIR / "z-spanish.db"
 
-# 种子词条：优先用 data 目录里的，其次回退到仓库自带的 seed_core.json
-SEED_PATH = DATA_DIR / "seed_core.json"
-REPO_SEED_PATH = Path(__file__).resolve().parent.parent / "seed" / "seed_core.json"
+# 种子词条：读 seed 目录下所有 *.json 合并（每个场景一个文件，可单独审核）。
+# 优先用 data/seed（部署时可挂载自定义），否则用仓库自带的 backend/seed。
+DATA_SEED_DIR = DATA_DIR / "seed"
+REPO_SEED_DIR = Path(__file__).resolve().parent.parent / "seed"
 
 # 前端静态文件目录
 FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"
