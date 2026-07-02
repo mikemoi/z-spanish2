@@ -122,3 +122,28 @@ def insert_entries(conn: sqlite3.Connection, entries) -> int:
         row["created_at"] = now
         conn.execute(sql, row)
     return len(rows)
+
+
+def upsert_seed_entries(conn: sqlite3.Connection, entries) -> int:
+    """种子专用：按 id upsert，刷新内容字段，但不覆盖 created_at、不动 review_state。
+    用于每次启动同步种子内容，让词条修正流入已存在的库而不丢复习进度。"""
+    now = utcnow_iso()
+    cols = _COLUMNS + ["created_at"]
+    placeholders = ", ".join(f":{c}" for c in cols)
+    # 冲突时更新除 id / created_at 以外的所有内容列
+    update_cols = [c for c in _COLUMNS if c != "id"]
+    updates = ", ".join(f"{c}=excluded.{c}" for c in update_cols)
+    sql = (
+        f"INSERT INTO entries ({', '.join(cols)}) VALUES ({placeholders}) "
+        f"ON CONFLICT(id) DO UPDATE SET {updates}"
+    )
+    n = 0
+    for e in entries:
+        row = {c: e.get(c) for c in _COLUMNS}
+        row["accepted_answers"] = _as_json_text(e.get("accepted_answers"), "[]")
+        row["tags"] = _as_json_text(e.get("tags"), "[]")
+        row["is_active"] = int(e.get("is_active", 1))
+        row["created_at"] = now
+        conn.execute(sql, row)
+        n += 1
+    return n
